@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-func draw_guy(x int, y int) {
-	termbox.SetCell(x, y, '☺', termbox.Attribute(15), termbox.Attribute(7))
-	termbox.SetCell(x, y+1, '✝', termbox.Attribute(15), termbox.Attribute(7))
-	termbox.SetCell(x, y+2, '∩', termbox.Attribute(15), termbox.Attribute(7))
+func draw_guy(g guy) {
+	termbox.SetCell(g.x, g.y, '☺', termbox.Attribute(15), termbox.Attribute(7))
+	termbox.SetCell(g.x, g.y+1, '✝', termbox.Attribute(15), termbox.Attribute(7))
+	termbox.SetCell(g.x, g.y+2, '∩', termbox.Attribute(15), termbox.Attribute(7))
 }
 
 func draw_world() {
@@ -68,13 +68,18 @@ func draw_world() {
 	}
 }
 
-func draw_all(guy_x int, guy_y int) {
+func draw_all(g guy) {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-
 	draw_world()
-	draw_guy(guy_x, guy_y)
+	draw_guy(g)
 
 	termbox.Flush()
+}
+
+type guy struct {
+	x          int
+	y          int
+	jumpCycles int
 }
 
 func main() {
@@ -82,14 +87,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer termbox.Close()
-
-	jump_cycles := 0
-	guy_x := 10
-	guy_y := 0
 
 	ticker := time.NewTicker(100 * time.Millisecond)
-	quit := make(chan struct{})
+	quit := make(chan string)
 
 	event_queue := make(chan termbox.Event)
 	go func() {
@@ -98,93 +98,93 @@ func main() {
 		}
 	}()
 
-	go func(t *time.Ticker, j *int, gx *int, gy *int) {
+	redrawRoutine := make(chan guy)
+	go func(r chan guy) {
+		for {
+			select {
+			case g := <-r:
+				draw_all(g)
+			}
+		}
+
+	}(redrawRoutine)
+
+	go func(t *time.Ticker, gs chan guy) {
+		g := guy{x: 10, y: 0, jumpCycles: 0}
+
 		for {
 			select {
 			case <-t.C:
-				if *j == 0 {
+				if g.jumpCycles == 0 {
 					w, h := termbox.Size()
-					if *gx+(*gy+3)*w < w*h {
-						c := termbox.CellBuffer()[*gx+(*gy+3)*w]
+					if g.x+(g.y+3)*w < w*h {
+						c := termbox.CellBuffer()[g.x+(g.y+3)*w]
 						if c.Ch == 32 {
-							*gy++
-							draw_all(*gx, *gy)
+							g.y++
+							gs <- g
 						}
 					}
-				} else if *j > 0 {
+				} else if g.jumpCycles > 0 {
 					w, _ := termbox.Size()
-					if *gx+(*gy-1)*w > 0 {
-						c := termbox.CellBuffer()[*gx+(*gy-1)*w]
+					if g.x+(g.y-1)*w > 0 {
+						c := termbox.CellBuffer()[g.x+(g.y-1)*w]
 						if c.Ch == 32 {
-							*gy--
-							*j--
-							draw_all(*gx, *gy)
+							g.y--
+							gs <- g
+						}
+					}
+					g.jumpCycles--
+				}
+			case ev := <-event_queue:
+				if ev.Type == termbox.EventKey {
+					switch ev.Key {
+					case termbox.KeyEsc:
+						quit <- "Goodbye!"
+					case termbox.KeyArrowLeft:
+						w, h := 80, 30
+						if g.x-1+(g.y+2)*g.x < w*h {
+							c1 := termbox.CellBuffer()[g.x-1+g.y*w]
+							c2 := termbox.CellBuffer()[g.x-1+(g.y+1)*w]
+							c3 := termbox.CellBuffer()[g.x-1+(g.y+2)*w]
+
+							if g.x > 0 && c1.Ch == 32 && c2.Ch == 32 && c3.Ch == 32 {
+								g.x--
+								gs <- g
+							}
+						}
+					case termbox.KeyArrowRight:
+						w, h := termbox.Size()
+						if g.x-1+(g.y+2)*g.x < w*h {
+							c1 := termbox.CellBuffer()[g.x+1+g.y*w]
+							c2 := termbox.CellBuffer()[g.x+1+(g.y+1)*w]
+							c3 := termbox.CellBuffer()[g.x+1+(g.y+2)*w]
+
+							if g.x < 79 && c1.Ch == 32 && c2.Ch == 32 && (c3.Ch == 32 || c3.Ch == 33) {
+								g.x++
+								gs <- g
+							}
+						}
+					case termbox.KeyArrowUp:
+						w, h := termbox.Size()
+						if g.x+(g.y+3)*w < w*h {
+							c := termbox.CellBuffer()[g.x+(g.y+3)*w]
+							if c.Ch != 32 && g.jumpCycles == 0 {
+								g.jumpCycles = 5
+							}
 						}
 					}
 				}
-			case <-quit:
+			}
+
+			if g.y == 1 && g.x == 79 {
+				termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 				t.Stop()
-				return
+				quit <- "You WIN!"
 			}
 		}
-		time.Sleep(100 * time.Millisecond)
-	}(ticker, &jump_cycles, &guy_x, &guy_y)
+	}(ticker, redrawRoutine)
 
-	draw_all(guy_x, guy_y)
-loop:
-	for {
-		select {
-		case ev := <-event_queue:
-			if ev.Type == termbox.EventKey {
-				switch ev.Key {
-				case termbox.KeyEsc:
-					termbox.Close()
-					break loop
-				case termbox.KeyArrowLeft:
-					w, h := 80, 30
-					if guy_x-1+(guy_y+2)*guy_x < w*h {
-						c1 := termbox.CellBuffer()[guy_x-1+guy_y*w]
-						c2 := termbox.CellBuffer()[guy_x-1+(guy_y+1)*w]
-						c3 := termbox.CellBuffer()[guy_x-1+(guy_y+2)*w]
-
-						if guy_x > 0 && c1.Ch == 32 && c2.Ch == 32 && c3.Ch == 32 {
-							guy_x--
-						}
-
-						draw_all(guy_x, guy_y)
-					}
-				case termbox.KeyArrowRight:
-					w, h := termbox.Size()
-					if guy_x-1+(guy_y+2)*guy_x < w*h {
-						c1 := termbox.CellBuffer()[guy_x+1+guy_y*w]
-						c2 := termbox.CellBuffer()[guy_x+1+(guy_y+1)*w]
-						c3 := termbox.CellBuffer()[guy_x+1+(guy_y+2)*w]
-
-						if guy_x < 79 && c1.Ch == 32 && c2.Ch == 32 && (c3.Ch == 32 || c3.Ch == 33) {
-							guy_x++
-						}
-
-						draw_all(guy_x, guy_y)
-					}
-				case termbox.KeyArrowUp:
-					w, h := termbox.Size()
-					if guy_x+(guy_y+3)*w < w*h {
-						c := termbox.CellBuffer()[guy_x+(guy_y+3)*w]
-						if c.Ch != 32 && jump_cycles == 0 {
-							jump_cycles = 5
-						}
-					}
-				}
-			}
-		}
-		if guy_y == 1 && guy_x == 79 {
-			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-			termbox.Close()
-			fmt.Println("YOU WIN!")
-			fmt.Println()
-			break loop
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	close(quit)
+	m := <-quit
+	termbox.Close()
+	fmt.Println(m)
 }
