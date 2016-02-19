@@ -88,7 +88,7 @@ func main() {
 		panic(err)
 	}
 
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(50 * time.Millisecond)
 	quit := make(chan string)
 
 	event_queue := make(chan termbox.Event)
@@ -141,7 +141,7 @@ func main() {
 					case termbox.KeyEsc:
 						quit <- "Goodbye!"
 					case termbox.KeyArrowLeft:
-						w, h := 80, 30
+						w, h := termbox.Size()
 						if g.x-1+(g.y+2)*g.x < w*h {
 							c1 := termbox.CellBuffer()[g.x-1+g.y*w]
 							c2 := termbox.CellBuffer()[g.x-1+(g.y+1)*w]
