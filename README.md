@@ -8,7 +8,7 @@ Basic Golang text-mode Mario-like game - My first Go program
 wget https://github.com/MarianoGappa/gomario/raw/master/bin/darwin/main && chmod +x main && ./main
 ```
 
-## ~~Quick run on Linux~~ Coming soon
+## Quick run on Linux
 ```
 wget https://github.com/MarianoGappa/gomario/raw/master/bin/linux/main && chmod +x main && ./main
 ```
