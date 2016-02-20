@@ -17,13 +17,16 @@ wget https://github.com/MarianoGappa/gomario/raw/master/bin/linux/main && chmod 
 Download this file and double click on it, I guess?
 https://github.com/MarianoGappa/gomario/raw/master/bin/windows/main.exe
 
-## Instructions to compile -> run
+## Build & Run
+- Install go and set `$GOPATH`
+https://golang.org/doc/install
+
+
 ```
-# TODO missing termbox dependencies on repo content
-cd ~/workspace && git clone git@github.com:MarianoGappa/gomario.git
+cd $GOPATH/src && git clone git@github.com:MarianoGappa/gomario.git
 cd gomario
-go run main.go
-# Reach the red square!
+go build .
+./gomario
 ```
 
 ## Disclaimer
