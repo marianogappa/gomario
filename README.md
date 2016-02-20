@@ -14,10 +14,8 @@ wget https://github.com/MarianoGappa/gomario/raw/master/bin/linux/main && chmod 
 ```
 
 ## Quick run on Windows
-```
-# Download this file and double click on it, I guess?
+Download this file and double click on it, I guess?
 https://github.com/MarianoGappa/gomario/raw/master/bin/windows/main.exe
-```
 
 ## Instructions to compile -> run
 ```
