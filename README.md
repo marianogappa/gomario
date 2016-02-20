@@ -13,6 +13,12 @@ wget https://github.com/MarianoGappa/gomario/raw/master/bin/darwin/main && chmod
 wget https://github.com/MarianoGappa/gomario/raw/master/bin/linux/main && chmod +x main && ./main
 ```
 
+## Quick run on Windows
+```
+# Download this file and double click on it, I guess?
+https://github.com/MarianoGappa/gomario/raw/master/bin/windows/main.exe
+```
+
 ## Instructions to compile -> run
 ```
 # TODO missing termbox dependencies on repo content
