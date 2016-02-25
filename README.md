@@ -23,8 +23,8 @@ https://golang.org/doc/install
 
 
 ```
-cd $GOPATH/src && git clone git@github.com:MarianoGappa/gomario.git
-cd gomario
+go get github.com/MarianoGappa/gomario
+cd $GOPATH/src/github.com/MarianoGappa/gomario
 go build .
 ./gomario
 ```
