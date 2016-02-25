@@ -28,6 +28,3 @@ cd $GOPATH/src/github.com/MarianoGappa/gomario
 go build .
 ./gomario
 ```
-
-## Disclaimer
-Mostly works; there is some race condition on gravity checking vs moving that sometimes makes Mario fall off perfectly good floors :P
